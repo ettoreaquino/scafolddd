@@ -545,6 +545,13 @@ class TaskRepository(ABC):
         pass
 ```
 
+```python
+# src/domain/repositories/__init__.py
+from .task_repository import TaskRepository
+
+__all__ = ['TaskRepository']
+```
+
 **✅ Test Domain Layer:**
 
 This is a **quick verification script** to ensure your domain layer is working correctly before moving forward. Create this as a temporary test file:
@@ -624,7 +631,7 @@ rm test_domain_verification.py
 ```python
 # src/application/use_cases/create_task.py
 from datetime import datetime, timezone
-from typing import Protocol, Dict, Any
+from typing import Protocol, Dict, Any, List
 from src.domain.entities import Task
 from src.domain.value_objects import TaskId, UserId, TaskStatus
 from src.domain.repositories import TaskRepository
@@ -632,7 +639,8 @@ from src.domain.events import DomainEvent
 
 class EventBus(Protocol):
     """Protocol for event publishing"""
-    async def publish(self, events: list[DomainEvent]) -> None:
+    async def publish(self, events: List[DomainEvent]) -> None:
+        """Publish a list of domain events"""
         pass
 
 class CreateTaskUseCase:
@@ -720,13 +728,15 @@ class GetTaskUseCase:
 
 ```python
 # src/application/use_cases/complete_task.py
-from typing import Protocol, Dict, Any, Optional
+from typing import Protocol, Dict, Any, Optional, List
 from src.domain.value_objects import TaskId, TaskStatus
 from src.domain.repositories import TaskRepository
 from src.domain.events import DomainEvent
 
 class EventBus(Protocol):
-    async def publish(self, events: list[DomainEvent]) -> None:
+    """Protocol for event publishing"""
+    async def publish(self, events: List[DomainEvent]) -> None:
+        """Publish a list of domain events"""
         pass
 
 class CompleteTaskUseCase:
@@ -824,6 +834,67 @@ __all__ = [
     "ListTasksUseCase",
     "CompleteTaskUseCase"
 ]
+```
+
+**✅ Verify Application Layer Implementation:**
+
+Create a simple verification script to test that your Application Layer is working correctly:
+
+```python
+# test_application_verification.py (temporary file in project root)
+import asyncio
+from unittest.mock import Mock, AsyncMock
+from src.domain.entities import Task
+from src.domain.value_objects import TaskId, UserId, TaskStatus
+from src.application.use_cases import CreateTaskUseCase
+
+async def test_application_layer():
+    """Quick verification that application layer is working"""
+    print("🧪 Testing Application Layer Setup...")
+    
+    # Create mock dependencies
+    mock_repository = AsyncMock()
+    mock_event_bus = AsyncMock()
+    
+    # Create use case
+    use_case = CreateTaskUseCase(mock_repository, mock_event_bus)
+    
+    # Test execution
+    result = await use_case.execute("user-123", "Test Task", "Test Description")
+    
+    # Verify response format
+    assert "task_id" in result
+    assert result["title"] == "Test Task"
+    assert result["status"] == "pending"
+    
+    # Verify mocks were called
+    assert mock_repository.save.called
+    assert mock_event_bus.publish.called
+    
+    print("✅ CreateTaskUseCase working correctly")
+    print("✅ Response format correct")
+    print("✅ Dependencies called properly")
+    print("🎉 Application layer working correctly!")
+
+if __name__ == "__main__":
+    asyncio.run(test_application_layer())
+```
+
+**Run the verification:**
+```bash
+poetry run python test_application_verification.py
+
+# Clean up after verification
+rm test_application_verification.py
+```
+
+**✅ Expected Output:**
+```
+🧪 Testing Application Layer Setup...
+✅ CreateTaskUseCase working correctly
+✅ Response format correct
+✅ Dependencies called properly
+🎉 Application layer working correctly!
 ```
 
 ---
