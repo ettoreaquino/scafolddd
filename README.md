@@ -118,7 +118,7 @@ src/
 ├── adapters/                  # 🔌 Entry points
 │   ├── api/                   # Lambda handlers
 │   └── events/                # Event processors
-└── shared/                    # 🛠️ Shared utilities
+└── commons/                   # 🛠️ Common utilities
 ```
 
 ## 🧪 Verification

@@ -185,7 +185,7 @@ poetry add --group dev aws-cdk-lib constructs
 
 ```bash
 # Create complete directory structure
-mkdir -p src/{domain/{entities,value_objects,services,repositories,events,exceptions},application/{use_cases,commands,queries,handlers},infrastructure/{repositories,messaging,email},adapters/{api,events},shared/{config,utils,decorators}}
+mkdir -p src/{domain/{entities,value_objects,services,repositories,events,exceptions},application/{use_cases,commands,queries,handlers},infrastructure/{repositories,messaging,email},adapters/{api,events},commons/{config,utils,decorators}}
 
 mkdir -p tests/{unit,integration,e2e}
 mkdir -p infrastructure/cdk
@@ -220,10 +220,10 @@ backend-tutorial/
 │   ├── adapters/                  # Entry points and interfaces
 │   │   ├── api/                   # API Gateway Lambda handlers
 │   │   └── events/                # Event-driven Lambda handlers
-│   └── shared/                    # Shared utilities
+│   └── commons/                   # Common utilities
 │       ├── config/                # Environment configuration
 │       ├── utils/                 # Common utilities
-│       └── decorators/            # Shared decorators
+│       └── decorators/            # Common decorators
 ├── tests/
 ├── infrastructure/cdk/            # CDK Python infrastructure
 ├── docs/                          # API documentation
@@ -1067,7 +1067,7 @@ def create_container() -> Container:
 ### Step 12: Create API Response Helpers
 
 ```python
-# src/shared/utils/api_response.py
+# src/commons/utils/api_response.py
 import json
 from typing import Any, Dict, Optional
 
@@ -1143,7 +1143,7 @@ from aws_lambda_powertools.metrics import MetricUnit
 from dependency_injector.wiring import Provide, inject
 from src.infrastructure.container import Container, create_container
 from src.application.use_cases import CreateTaskUseCase
-from src.shared.utils import APIResponse
+from src.commons.utils import APIResponse
 
 # Initialize observability tools
 logger = Logger()
@@ -1219,7 +1219,7 @@ from aws_lambda_powertools.metrics import MetricUnit
 from dependency_injector.wiring import Provide, inject
 from src.infrastructure.container import Container, create_container
 from src.application.use_cases import GetTaskUseCase
-from src.shared.utils import APIResponse
+from src.commons.utils import APIResponse
 
 logger = Logger()
 tracer = Tracer()
@@ -1280,7 +1280,7 @@ from aws_lambda_powertools.metrics import MetricUnit
 from dependency_injector.wiring import Provide, inject
 from src.infrastructure.container import Container, create_container
 from src.application.use_cases import ListTasksUseCase
-from src.shared.utils import APIResponse
+from src.commons.utils import APIResponse
 
 logger = Logger()
 tracer = Tracer()
@@ -1337,7 +1337,7 @@ from aws_lambda_powertools.metrics import MetricUnit
 from dependency_injector.wiring import Provide, inject
 from src.infrastructure.container import Container, create_container
 from src.application.use_cases import CompleteTaskUseCase
-from src.shared.utils import APIResponse
+from src.commons.utils import APIResponse
 
 logger = Logger()
 tracer = Tracer()
@@ -2573,7 +2573,7 @@ poetry run python scripts/test_deployed_api.py https://your-api-id.execute-api.u
 ### Step 28: Environment Configuration
 
 ```python
-# src/shared/config/settings.py
+# src/commons/config/settings.py
 import os
 from enum import Enum
 from typing import Optional
