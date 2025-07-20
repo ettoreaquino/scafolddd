@@ -6,7 +6,7 @@ def test_domain_setup():
   """Quick verification that domain layer is working"""
   print("🧪 Testing Domain Layer Setup...")
 
-  # Test value objects
+  # Test Value Objects
   task_id = TaskId.generate()
   user_id = UserId("user-123")
   status = TaskStatus.PENDING
@@ -15,7 +15,7 @@ def test_domain_setup():
   print(f"✅ UserId created: {user_id}")
   print(f"✅ TaskStatus: {status}")
   
-  # Test entity
+  # Test Entity
   task = Task(
       id=task_id,
       user_id=user_id,
