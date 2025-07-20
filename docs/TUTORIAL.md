@@ -127,25 +127,26 @@ cdk --version
 
 ```bash
 # Create project directory
-mkdir backend-tutorial
-cd backend-tutorial
+mkdir scafolddd
+cd scafolddd
 
 # Create pyproject.toml file directly (more reliable than poetry init)
 cat > pyproject.toml << 'EOF'
-[tool.poetry]
-name = "backend-tutorial"
+[project]
+name = "scafolddd"
 version = "0.1.0"
-description = "Serverless Python backend tutorial with DDD and CLEAN architecture"
-authors = ["Your Organization <team@company.com>"]
-packages = [{include = "src"}]
+description = ""
+authors = [
+    {name = "ettore.aquino",email = "ettore@ettoreaquino.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12,<4.0.0"
 
-[tool.poetry.dependencies]
-python = "^3.12"
-
-[tool.poetry.group.dev.dependencies]
+[tool.poetry]
+packages = [{include = "scafolddd", from = "src"}]
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 EOF
 
