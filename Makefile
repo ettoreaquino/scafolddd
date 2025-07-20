@@ -26,11 +26,16 @@ milestone-part2: ## Verify Part 2: Domain Layer Implementation
 	@echo "$(BLUE)Running Part 2: Domain Layer Verification...$(NC)"
 	@PYTHONPATH=. $(PYTHON) milestones/milestone_part2_domain_layer.py
 
+milestone-part3: ## Verify Part 3: Application Layer Implementation
+	@echo "$(BLUE)Running Part 3: Application Layer Verification...$(NC)"
+	@PYTHONPATH=. $(PYTHON) milestones/milestone_part3_application_layer.py
+
 milestone-all: ## Run all available milestone verifications
 	@echo "$(BLUE)Running Available Milestone Verifications...$(NC)"
 	@echo "$(YELLOW)Currently available: Part 2 (Domain Layer)$(NC)"
 	@echo ""
 	@$(MAKE) milestone-part2
+	@$(MAKE) milestone-part3
 	@echo ""
 	@echo "$(GREEN)✅ All available milestone verifications completed!$(NC)"
 
