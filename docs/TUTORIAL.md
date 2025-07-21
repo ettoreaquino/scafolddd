@@ -185,7 +185,7 @@ poetry add --group dev aws-cdk-lib constructs
 
 ```bash
 # Create complete directory structure
-mkdir -p src/{domain/{entities,value_objects,services,repositories,events,exceptions},application/{use_cases,commands,queries,handlers},infrastructure/{repositories,messaging,email},adapters/{api,events},commons/{config,utils,decorators}}
+mkdir -p src/{domain/{entities,value_objects,services,repositories,events,exceptions},application/{services,commands,queries,handlers},infrastructure/{repositories,messaging,email},adapters/{api,events},commons/{config,utils,decorators}}
 
 mkdir -p tests/{unit,integration,e2e}
 mkdir -p infrastructure/cdk
@@ -209,7 +209,7 @@ backend-tutorial/
 │   │   ├── events/                # Domain events
 │   │   └── exceptions/            # Domain-specific exceptions
 │   ├── application/               # Application orchestration
-│   │   ├── use_cases/             # Business use case implementations
+│   │   ├── services/              # Business service implementations
 │   │   ├── commands/              # Command objects for CQRS
 │   │   ├── queries/               # Query objects for CQRS
 │   │   └── handlers/              # Command and query handlers
@@ -626,10 +626,10 @@ rm test_domain_verification.py
 
 > **The application layer orchestrates domain objects and coordinates with infrastructure.**
 
-### Step 8: Create Use Cases
+### Step 8: Create Services
 
 ```python
-# src/application/use_cases/create_task.py
+# src/application/services/create_task_service.py
 from datetime import datetime, timezone
 from typing import Protocol, Dict, Any, List
 from src.domain.entities import Task
@@ -643,15 +643,15 @@ class EventBus(Protocol):
         """Publish a list of domain events"""
         pass
 
-class CreateTaskUseCase:
-    """Use case for creating a new task"""
+class CreateTaskService:
+    """Service for creating a new task"""
     
     def __init__(self, task_repository: TaskRepository, event_bus: EventBus):
         self._task_repository = task_repository
         self._event_bus = event_bus
     
     async def execute(self, user_id: str, title: str, description: str = "") -> Dict[str, Any]:
-        """Execute the create task use case"""
+        """Execute the create task service"""
         
         # Validate inputs
         if not user_id or not user_id.strip():
@@ -690,19 +690,19 @@ class CreateTaskUseCase:
 ```
 
 ```python
-# src/application/use_cases/get_task.py
+# src/application/services/get_task_service.py
 from typing import Dict, Any, Optional
 from src.domain.value_objects import TaskId
 from src.domain.repositories import TaskRepository
 
-class GetTaskUseCase:
-    """Use case for retrieving a task by ID"""
+class GetTaskService:
+    """Service for retrieving a task by ID"""
     
     def __init__(self, task_repository: TaskRepository):
         self._task_repository = task_repository
     
     async def execute(self, task_id: str) -> Optional[Dict[str, Any]]:
-        """Execute the get task use case"""
+        """Execute the get task service"""
         
         if not task_id or not task_id.strip():
             raise ValueError("Task ID is required")
@@ -727,7 +727,7 @@ class GetTaskUseCase:
 ```
 
 ```python
-# src/application/use_cases/complete_task.py
+# src/application/services/complete_task_service.py
 from typing import Protocol, Dict, Any, Optional, List
 from src.domain.value_objects import TaskId, TaskStatus
 from src.domain.repositories import TaskRepository
@@ -739,15 +739,15 @@ class EventBus(Protocol):
         """Publish a list of domain events"""
         pass
 
-class CompleteTaskUseCase:
-    """Use case for completing a task"""
+class CompleteTaskService:
+    """Service for completing a task"""
     
     def __init__(self, task_repository: TaskRepository, event_bus: EventBus):
         self._task_repository = task_repository
         self._event_bus = event_bus
     
     async def execute(self, task_id: str) -> Optional[Dict[str, Any]]:
-        """Execute the complete task use case"""
+        """Execute the complete task service"""
         
         if not task_id or not task_id.strip():
             raise ValueError("Task ID is required")
@@ -782,22 +782,22 @@ class CompleteTaskUseCase:
         }
 ```
 
-**Create remaining use cases:**
+**Create remaining services:**
 
 ```python
-# src/application/use_cases/list_tasks.py
+# src/application/services/list_tasks_service.py
 from typing import List, Dict, Any
 from src.domain.value_objects import UserId
 from src.domain.repositories import TaskRepository
 
-class ListTasksUseCase:
-    """Use case for listing all tasks for a user"""
+class ListTasksService:
+    """Service for listing all tasks for a user"""
     
     def __init__(self, task_repository: TaskRepository):
         self._task_repository = task_repository
     
     async def execute(self, user_id: str) -> List[Dict[str, Any]]:
-        """Execute the list tasks use case"""
+        """Execute the list tasks service"""
         
         if not user_id or not user_id.strip():
             raise ValueError("User ID is required")
@@ -822,17 +822,17 @@ class ListTasksUseCase:
 ```
 
 ```python
-# src/application/use_cases/__init__.py
-from .create_task import CreateTaskUseCase
-from .get_task import GetTaskUseCase
-from .list_tasks import ListTasksUseCase
-from .complete_task import CompleteTaskUseCase
+# src/application/services/__init__.py
+from .create_task_service import CreateTaskService
+from .get_task_service import GetTaskService
+from .list_tasks_service import ListTasksService
+from .complete_task_service import CompleteTaskService
 
 __all__ = [
-    "CreateTaskUseCase",
-    "GetTaskUseCase", 
-    "ListTasksUseCase",
-    "CompleteTaskUseCase"
+    "CreateTaskService",
+    "GetTaskService", 
+    "ListTasksService",
+    "CompleteTaskService"
 ]
 ```
 
@@ -846,7 +846,7 @@ import asyncio
 from unittest.mock import Mock, AsyncMock
 from src.domain.entities import Task
 from src.domain.value_objects import TaskId, UserId, TaskStatus
-from src.application.use_cases import CreateTaskUseCase
+from src.application.services import CreateTaskService
 
 async def test_application_layer():
     """Quick verification that application layer is working"""
@@ -856,11 +856,11 @@ async def test_application_layer():
     mock_repository = AsyncMock()
     mock_event_bus = AsyncMock()
     
-    # Create use case
-    use_case = CreateTaskUseCase(mock_repository, mock_event_bus)
+    # Create service
+    service = CreateTaskService(mock_repository, mock_event_bus)
     
     # Test execution
-    result = await use_case.execute("user-123", "Test Task", "Test Description")
+    result = await service.execute("user-123", "Test Task", "Test Description")
     
     # Verify response format
     assert "task_id" in result
@@ -871,7 +871,7 @@ async def test_application_layer():
     assert mock_repository.save.called
     assert mock_event_bus.publish.called
     
-    print("✅ CreateTaskUseCase working correctly")
+    print("✅ CreateTaskService working correctly")
     print("✅ Response format correct")
     print("✅ Dependencies called properly")
     print("🎉 Application layer working correctly!")
@@ -891,7 +891,7 @@ rm test_application_verification.py
 **✅ Expected Output:**
 ```
 🧪 Testing Application Layer Setup...
-✅ CreateTaskUseCase working correctly
+✅ CreateTaskService working correctly
 ✅ Response format correct
 ✅ Dependencies called properly
 🎉 Application layer working correctly!
@@ -1071,11 +1071,11 @@ from dependency_injector import containers, providers
 from src.domain.repositories import TaskRepository
 from src.infrastructure.repositories import DynamoDBTaskRepository
 from src.infrastructure.messaging import SNSEventBus
-from src.application.use_cases import (
-    CreateTaskUseCase,
-    GetTaskUseCase,
-    ListTasksUseCase,
-    CompleteTaskUseCase
+from src.application.services import (
+    CreateTaskService,
+    GetTaskService,
+    ListTasksService,
+    CompleteTaskService
 )
 
 class Container(containers.DeclarativeContainer):
@@ -1095,25 +1095,25 @@ class Container(containers.DeclarativeContainer):
         topic_arn=config.topic_arn
     )
     
-    # Use Cases
-    create_task_use_case = providers.Factory(
-        CreateTaskUseCase,
+    # Services
+    create_task_service = providers.Factory(
+        CreateTaskService,
         task_repository=task_repository,
         event_bus=event_bus
     )
     
-    get_task_use_case = providers.Factory(
-        GetTaskUseCase,
+    get_task_service = providers.Factory(
+        GetTaskService,
         task_repository=task_repository
     )
     
-    list_tasks_use_case = providers.Factory(
-        ListTasksUseCase,
+    list_tasks_service = providers.Factory(
+        ListTasksService,
         task_repository=task_repository
     )
     
-    complete_task_use_case = providers.Factory(
-        CompleteTaskUseCase,
+    complete_task_service = providers.Factory(
+        CompleteTaskService,
         task_repository=task_repository,
         event_bus=event_bus
     )
@@ -1133,7 +1133,7 @@ def create_container() -> Container:
 
 ## 🔗 API Adapter Layer Implementation
 
-> **The adapter layer exposes our use cases as REST API endpoints.**
+> **The adapter layer exposes our services as REST API endpoints.**
 
 ### Step 12: Create API Response Helpers
 
@@ -1213,7 +1213,7 @@ from aws_lambda_powertools import Logger, Tracer, Metrics
 from aws_lambda_powertools.metrics import MetricUnit
 from dependency_injector.wiring import Provide, inject
 from src.infrastructure.container import Container, create_container
-from src.application.use_cases import CreateTaskUseCase
+from src.application.services import CreateTaskService
 from src.commons.utils import APIResponse
 
 # Initialize observability tools
@@ -1232,7 +1232,7 @@ container.wire(modules=[__name__])
 def lambda_handler(
     event: Dict[str, Any],
     context: Any,
-    use_case: CreateTaskUseCase = Provide[Container.create_task_use_case]
+    service: CreateTaskService = Provide[Container.create_task_service]
 ) -> Dict[str, Any]:
     """Lambda handler for creating a task"""
     
@@ -1262,8 +1262,8 @@ def lambda_handler(
         if not title:
             return APIResponse.validation_error("title is required")
         
-        # Execute use case
-        result = await use_case.execute(user_id, title, description)
+        # Execute service
+        result = await service.execute(user_id, title, description)
         
         logger.info(f"Task created successfully: {result['task_id']}")
         metrics.add_metric(name="TasksCreated", unit=MetricUnit.Count, value=1)
@@ -1289,7 +1289,7 @@ from aws_lambda_powertools import Logger, Tracer, Metrics
 from aws_lambda_powertools.metrics import MetricUnit
 from dependency_injector.wiring import Provide, inject
 from src.infrastructure.container import Container, create_container
-from src.application.use_cases import GetTaskUseCase
+from src.application.services import GetTaskService
 from src.commons.utils import APIResponse
 
 logger = Logger()
@@ -1306,7 +1306,7 @@ container.wire(modules=[__name__])
 def lambda_handler(
     event: Dict[str, Any],
     context: Any,
-    use_case: GetTaskUseCase = Provide[Container.get_task_use_case]
+    service: GetTaskService = Provide[Container.get_task_service]
 ) -> Dict[str, Any]:
     """Lambda handler for getting a task by ID"""
     
@@ -1319,8 +1319,8 @@ def lambda_handler(
         if not task_id:
             return APIResponse.validation_error("task_id is required")
         
-        # Execute use case
-        result = await use_case.execute(task_id)
+        # Execute service
+        result = await service.execute(task_id)
         
         if result is None:
             logger.info(f"Task not found: {task_id}")
@@ -1350,7 +1350,7 @@ from aws_lambda_powertools import Logger, Tracer, Metrics
 from aws_lambda_powertools.metrics import MetricUnit
 from dependency_injector.wiring import Provide, inject
 from src.infrastructure.container import Container, create_container
-from src.application.use_cases import ListTasksUseCase
+from src.application.services import ListTasksService
 from src.commons.utils import APIResponse
 
 logger = Logger()
@@ -1367,7 +1367,7 @@ container.wire(modules=[__name__])
 def lambda_handler(
     event: Dict[str, Any],
     context: Any,
-    use_case: ListTasksUseCase = Provide[Container.list_tasks_use_case]
+    service: ListTasksService = Provide[Container.list_tasks_service]
 ) -> Dict[str, Any]:
     """Lambda handler for listing tasks by user ID"""
     
@@ -1380,8 +1380,8 @@ def lambda_handler(
         if not user_id:
             return APIResponse.validation_error("user_id query parameter is required")
         
-        # Execute use case
-        result = await use_case.execute(user_id)
+        # Execute service
+        result = await service.execute(user_id)
         
         logger.info(f"Listed {len(result)} tasks for user: {user_id}")
         metrics.add_metric(name="TasksListed", unit=MetricUnit.Count, value=len(result))
@@ -1407,7 +1407,7 @@ from aws_lambda_powertools import Logger, Tracer, Metrics
 from aws_lambda_powertools.metrics import MetricUnit
 from dependency_injector.wiring import Provide, inject
 from src.infrastructure.container import Container, create_container
-from src.application.use_cases import CompleteTaskUseCase
+from src.application.services import CompleteTaskService
 from src.commons.utils import APIResponse
 
 logger = Logger()
@@ -1424,7 +1424,7 @@ container.wire(modules=[__name__])
 def lambda_handler(
     event: Dict[str, Any],
     context: Any,
-    use_case: CompleteTaskUseCase = Provide[Container.complete_task_use_case]
+    service: CompleteTaskService = Provide[Container.complete_task_service]
 ) -> Dict[str, Any]:
     """Lambda handler for completing a task"""
     
@@ -1437,8 +1437,8 @@ def lambda_handler(
         if not task_id:
             return APIResponse.validation_error("task_id is required")
         
-        # Execute use case
-        result = await use_case.execute(task_id)
+        # Execute service
+        result = await service.execute(task_id)
         
         if result is None:
             logger.info(f"Task not found: {task_id}")
@@ -2387,16 +2387,16 @@ class TestAPIHandlers:
     @patch('src.adapters.api.create_task.create_container')
     async def test_create_task_success(self, mock_container):
         """Test successful task creation via API"""
-        # Mock use case
-        mock_use_case = AsyncMock()
-        mock_use_case.execute.return_value = {
+        # Mock service
+        mock_service = AsyncMock()
+        mock_service.execute.return_value = {
             "task_id": "task-123",
             "title": "Test Task",
             "status": "pending",
             "user_id": "user-456"
         }
         
-        mock_container.return_value.create_task_use_case.return_value = mock_use_case
+        mock_container.return_value.create_task_service.return_value = mock_service
         
         # Create test event
         event = {

@@ -41,7 +41,7 @@ Always refer to the official project structure:
 ```
 src/
 ├── domain/                    # 🏛️ Pure business logic
-├── application/               # 🎯 Use case orchestration  
+├── application/               # 🎯 Service orchestration  
 ├── infrastructure/            # 🔧 External dependencies
 ├── adapters/                  # 🔌 Entry points
 └── commons/                   # 🛠️ Common utilities
@@ -50,7 +50,7 @@ src/
 ### Tutorial Parts (from GitHub Issues)
 1. **Part 1**: Project Setup - Development environment initialization
 2. **Part 2**: Domain Layer - Pure business logic implementation
-3. **Part 3**: Application Layer - Use cases and orchestration
+3. **Part 3**: Application Layer - Services and orchestration
 4. **Part 4**: Infrastructure Layer - External service connections
 5. **Part 5**: API Adapter Layer - REST endpoint exposure
 6. **Part 6**: CDK Infrastructure - AWS deployment
@@ -68,7 +68,7 @@ src/
 
 #### CLEAN Architecture Layers
 - **Domain**: Pure business logic, no external dependencies
-- **Application**: Use case orchestration, business workflows
+- **Application**: Service orchestration, business workflows
 - **Infrastructure**: Concrete implementations of external services
 - **Adapters**: Entry points and interface adapters
 

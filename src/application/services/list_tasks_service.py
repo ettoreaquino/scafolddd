@@ -2,14 +2,14 @@ from typing import List, Dict, Any
 from src.domain.value_objects import UserId
 from src.domain.repositories import TaskRepository
 
-class ListTasksUseCase:
-    """Use case for listing all tasks for a user"""
+class ListTasksService:
+    """Service for listing all tasks for a user"""
 
     def __init__(self, task_repository: TaskRepository):
         self._task_repository = task_repository
 
     async def execute(self, user_id: str) -> List[Dict[str, Any]]:
-        """Execute the list tasks use case"""
+        """Execute the list tasks service"""
 
         # Step 1: Validate input
         if not user_id or not user_id.strip():

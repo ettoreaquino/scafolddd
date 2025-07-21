@@ -81,7 +81,7 @@ Work through **[9 structured GitHub Issues](https://github.com/ettoreaquino/scaf
 
 1. **[Part 1: Project Setup](https://github.com/ettoreaquino/scafolddd/issues/1)** - Initialize development environment
 2. **[Part 2: Domain Layer](https://github.com/ettoreaquino/scafolddd/issues/2)** - Implement core business logic
-3. **[Part 3: Application Layer](https://github.com/ettoreaquino/scafolddd/issues/3)** - Build use cases and orchestration
+3. **[Part 3: Application Layer](https://github.com/ettoreaquino/scafolddd/issues/3)** - Build services and orchestration
 4. **[Part 4: Infrastructure Layer](https://github.com/ettoreaquino/scafolddd/issues/4)** - Connect to external services
 5. **[Part 5: API Adapter Layer](https://github.com/ettoreaquino/scafolddd/issues/5)** - Expose REST endpoints
 6. **[Part 6: CDK Infrastructure](https://github.com/ettoreaquino/scafolddd/issues/6)** - Deploy to AWS
@@ -110,8 +110,8 @@ src/
 │   ├── value_objects/         # Immutable domain objects  
 │   ├── repositories/          # Abstract interfaces
 │   └── events/                # Domain events
-├── application/               # 🎯 Use case orchestration
-│   └── use_cases/             # Business use cases
+├── application/               # 🎯 Service orchestration
+│   └── services/              # Business services
 ├── infrastructure/            # 🔧 External dependencies
 │   ├── repositories/          # DynamoDB implementations
 │   └── messaging/             # SNS/SQS adapters

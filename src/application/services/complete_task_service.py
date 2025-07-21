@@ -8,15 +8,15 @@ class EventBus(Protocol):
     async def publish(self, events: List[DomainEvent]) -> None:
         pass
 
-class CompleteTaskUseCase:
-    """Use case for completing a task"""
+class CompleteTaskService:
+    """Service for completing a task"""
     
     def __init__(self, task_repository: TaskRepository, event_bus: EventBus):
         self._task_repository = task_repository
         self._event_bus = event_bus
     
     async def execute(self, task_id: str) -> Optional[Dict[str, Any]]:
-        """Execute the complete task use case"""
+        """Execute the complete task service"""
         
         # Step 1: Validate input
         if not task_id or not task_id.strip():

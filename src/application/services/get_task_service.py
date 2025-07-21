@@ -3,14 +3,14 @@ from typing import Dict, Any, Optional
 from src.domain.value_objects import TaskId
 from src.domain.repositories import TaskRepository
 
-class GetTaskUseCase:
-    """Use case for retrieving a task by its ID"""
+class GetTaskService:
+    """Service for retrieving a task by its ID"""
 
     def __init__(self, task_repository: TaskRepository):
         self._task_repository = task_repository
 
     async def execute(self, task_id: str) -> Optional[Dict[str, Any]]:
-        """Execute the get task use case"""
+        """Execute the get task service"""
 
         # Step 1: Validate input
         if not task_id or not task_id.strip():

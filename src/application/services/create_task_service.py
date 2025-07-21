@@ -12,15 +12,15 @@ class EventBus(Protocol):
         """Publish a list of domain events"""
         pass
 
-class CreateTaskUseCase:
-    """Use case for creating a new task"""
+class CreateTaskService:
+    """Service for creating a new task"""
     
     def __init__(self, task_repository: TaskRepository, event_bus: EventBus):
         self._task_repository = task_repository
         self._event_bus = event_bus
 
     async def execute(self, user_id: str, title: str, description: str = "") -> Dict[str, Any]:
-        """Execute the create task use case"""
+        """Execute the create task service"""
 
         # Step 1: Validate the inputs (Application Layer responsibility)
         if not user_id or not user_id.strip():
