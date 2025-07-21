@@ -629,7 +629,7 @@ rm test_domain_verification.py
 ### Step 8: Create Services
 
 ```python
-# src/application/services/create_task_service.py
+# src/application/services/create_task.py
 from datetime import datetime, timezone
 from typing import Protocol, Dict, Any, List
 from src.domain.entities import Task
@@ -690,7 +690,7 @@ class CreateTaskService:
 ```
 
 ```python
-# src/application/services/get_task_service.py
+# src/application/services/get_task.py
 from typing import Dict, Any, Optional
 from src.domain.value_objects import TaskId
 from src.domain.repositories import TaskRepository
@@ -727,7 +727,7 @@ class GetTaskService:
 ```
 
 ```python
-# src/application/services/complete_task_service.py
+# src/application/services/complete_task.py
 from typing import Protocol, Dict, Any, Optional, List
 from src.domain.value_objects import TaskId, TaskStatus
 from src.domain.repositories import TaskRepository
@@ -785,7 +785,7 @@ class CompleteTaskService:
 **Create remaining services:**
 
 ```python
-# src/application/services/list_tasks_service.py
+# src/application/services/list_tasks.py
 from typing import List, Dict, Any
 from src.domain.value_objects import UserId
 from src.domain.repositories import TaskRepository
@@ -823,10 +823,10 @@ class ListTasksService:
 
 ```python
 # src/application/services/__init__.py
-from .create_task_service import CreateTaskService
-from .get_task_service import GetTaskService
-from .list_tasks_service import ListTasksService
-from .complete_task_service import CompleteTaskService
+from .create_task import CreateTaskService
+from .get_task import GetTaskService
+from .list_tasks import ListTasksService
+from .complete_task import CompleteTaskService
 
 __all__ = [
     "CreateTaskService",
@@ -1096,23 +1096,23 @@ class Container(containers.DeclarativeContainer):
     )
     
     # Services
-    create_task_service = providers.Factory(
+    create_task = providers.Factory(
         CreateTaskService,
         task_repository=task_repository,
         event_bus=event_bus
     )
     
-    get_task_service = providers.Factory(
+    get_task = providers.Factory(
         GetTaskService,
         task_repository=task_repository
     )
     
-    list_tasks_service = providers.Factory(
+    list_tasks = providers.Factory(
         ListTasksService,
         task_repository=task_repository
     )
     
-    complete_task_service = providers.Factory(
+    complete_task = providers.Factory(
         CompleteTaskService,
         task_repository=task_repository,
         event_bus=event_bus
@@ -1232,7 +1232,7 @@ container.wire(modules=[__name__])
 def lambda_handler(
     event: Dict[str, Any],
     context: Any,
-    service: CreateTaskService = Provide[Container.create_task_service]
+    service: CreateTaskService = Provide[Container.create_task]
 ) -> Dict[str, Any]:
     """Lambda handler for creating a task"""
     
@@ -1306,7 +1306,7 @@ container.wire(modules=[__name__])
 def lambda_handler(
     event: Dict[str, Any],
     context: Any,
-    service: GetTaskService = Provide[Container.get_task_service]
+    service: GetTaskService = Provide[Container.get_task]
 ) -> Dict[str, Any]:
     """Lambda handler for getting a task by ID"""
     
@@ -1367,7 +1367,7 @@ container.wire(modules=[__name__])
 def lambda_handler(
     event: Dict[str, Any],
     context: Any,
-    service: ListTasksService = Provide[Container.list_tasks_service]
+    service: ListTasksService = Provide[Container.list_tasks]
 ) -> Dict[str, Any]:
     """Lambda handler for listing tasks by user ID"""
     
@@ -1424,7 +1424,7 @@ container.wire(modules=[__name__])
 def lambda_handler(
     event: Dict[str, Any],
     context: Any,
-    service: CompleteTaskService = Provide[Container.complete_task_service]
+    service: CompleteTaskService = Provide[Container.complete_task]
 ) -> Dict[str, Any]:
     """Lambda handler for completing a task"""
     
@@ -2396,7 +2396,7 @@ class TestAPIHandlers:
             "user_id": "user-456"
         }
         
-        mock_container.return_value.create_task_service.return_value = mock_service
+        mock_container.return_value.create_task.return_value = mock_service
         
         # Create test event
         event = {
