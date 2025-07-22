@@ -44,13 +44,13 @@ A complete REST API for task management with:
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   API Gateway   │    │     Lambda      │    │    DynamoDB     │
-│                 │───▶│   Functions     │───▶│     Table       │
+│                 │───>│   Functions     │───>│     Table       │
 │   + Swagger     │    │                 │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                 │
                                 ▼
                        ┌─────────────────┐    ┌─────────────────┐
-                       │   SNS Topic     │───▶│   SQS Queue     │
+                       │   SNS Topic     │───>│   SQS Queue     │
                        │                 │    │   + Lambda      │
                        └─────────────────┘    └─────────────────┘
 ```
@@ -60,9 +60,9 @@ A complete REST API for task management with:
 The tutorial uses a **single-table design** following DynamoDB best practices for optimal performance and cost efficiency:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────┐
 │                         DynamoDB Table                         │
-│                                                                 │
+│                                                                │
 │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────┐ │
 │  │     Task        │────│   TaskId (PK)   │────│ TASK#{id}   │ │
 │  │   Entity        │    │   TaskId (SK)   │    │ TASK#{id}   │ │
@@ -73,8 +73,8 @@ The tutorial uses a **single-table design** following DynamoDB best practices fo
 │  │ • created_at    │    │Created (GSI1SK) │    │TASK#{date}  │ │
 │  │ • updated_at    │    └─────────────────┘    └─────────────┘ │
 │  │ • completed_at  │                                           │
-│  └─────────────────┘              GSI1                        │
-└─────────────────────────────────────────────────────────────────┘
+│  └─────────────────┘              GSI1                         │
+└────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   UserId        │    │     TaskId      │    │   TaskStatus    │

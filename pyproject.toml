@@ -30,6 +30,9 @@ mypy = "^1.17.0"
 pre-commit = "^4.2.0"
 aws-cdk-lib = "^2.206.0"
 constructs = "^10.4.2"
+pytest-html = "^4.1.1"
+pytest-xdist = "^3.8.0"
+pytest-metadata = "^3.1.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
