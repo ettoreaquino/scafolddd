@@ -27,7 +27,7 @@ class TaskRepository(ABC):
     pass
   
   @abstractmethod
-  async def exists(self, task_id: Task) -> bool:
+  async def exists(self, task_id: TaskId) -> bool:
     """Check if a task exists"""
     pass
   
