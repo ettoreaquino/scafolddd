@@ -22,8 +22,11 @@ class HierarchicalTestReporter:
         self.failed_count = 0
         self.skipped_count = 0
         self._printed_headers = set()
+        self._current_layer = None
         self._total_tests = 0
         self._session_total = 0
+        self._original_stdout = None
+        self._first_component = True
         
     def _get_test_path_parts(self, nodeid):
         """Extract hierarchical parts from test nodeid"""
@@ -63,6 +66,23 @@ class HierarchicalTestReporter:
         print(f"{indent}{test_type.title()}/")
         print(f"{indent}  {layer.title()}/")
         print(f"{indent}    {component.replace('_', ' ').title()}/")
+    
+    def _print_layer_header(self, test_type, layer):
+        """Print layer header only (without component)"""
+        indent = ""  # No base indent for test organization
+        # Add newline before first header to separate from pytest output
+        if not self._printed_headers:
+            print()
+        print(f"{indent}{test_type.title()}/")
+        print(f"{indent}  {layer.title()}/")
+    
+    def _print_component_header(self, component):
+        """Print component header"""
+        indent = "    "  # Indent for component under layer
+        # Add newline before component header (except for the first one)
+        if not self._first_component:
+            print()
+        print(f"{indent}{component.replace('_', ' ').title()}/")
     
     def _print_test_result(self, nodeid, outcome, duration=None):
         """Print individual test result with proper indentation"""
@@ -115,12 +135,21 @@ class HierarchicalTestReporter:
         if report.when == 'call':  # Only report on actual test execution
             parts = self._get_test_path_parts(report.nodeid)
             
-            # Check if we need to print a new header
-            current_key = f"{parts['test_type']}/{parts['layer']}/{parts['component']}"
+            # Check if we need to print a new header (only when layer changes)
+            current_layer = f"{parts['test_type']}/{parts['layer']}"
             
-            if current_key not in self._printed_headers:
-                self._print_header(parts['test_type'], parts['layer'], parts['component'])
-                self._printed_headers.add(current_key)
+            if current_layer != self._current_layer:
+                # Print the layer header
+                self._print_layer_header(parts['test_type'], parts['layer'])
+                self._current_layer = current_layer
+            
+            # Check if we need to print a component header
+            current_component = f"{parts['test_type']}/{parts['layer']}/{parts['component']}"
+            
+            if current_component not in self._printed_headers:
+                self._print_component_header(parts['component'])
+                self._printed_headers.add(current_component)
+                self._first_component = False
             
             # Print test result with "." prefix for first test in each file
             outcome = report.outcome
@@ -160,10 +189,21 @@ class HierarchicalTestReporter:
             elif 'api' in item.nodeid:
                 item.add_marker(pytest.mark.api)
     
-    def pytest_sessionfinish(self, session, exitstatus):
-        """Print summary at the end"""
-        # Clear the line that contains the [100%] by overwriting it
+    def pytest_sessionstart(self, session):
+        """Start session and capture original stdout"""
         import sys
+        self._original_stdout = sys.stdout
+        # Create a custom stdout that filters percentage lines
+        sys.stdout = self.PercentageFilter(self._original_stdout)
+    
+    def pytest_sessionfinish(self, session, exitstatus):
+        """Print summary at the end and restore stdout"""
+        # Restore original stdout
+        import sys
+        if self._original_stdout:
+            sys.stdout = self._original_stdout
+        
+        # Clear any remaining percentage lines from pytest output
         sys.stdout.write('\r' + ' ' * 100 + '\r')
         sys.stdout.flush()
         
@@ -181,6 +221,46 @@ class HierarchicalTestReporter:
             print("\n🎉 All tests passed!")
         else:
             print(f"\n❌ {self.failed_count} test(s) failed")
+    
+    class PercentageFilter:
+        """Filter out percentage summary lines from pytest output"""
+        def __init__(self, original_stdout):
+            self.original_stdout = original_stdout
+        
+        def write(self, text):
+            # Filter out lines that are just percentage summaries
+            lines = text.split('\n')
+            filtered_lines = []
+            for line in lines:
+                # Skip lines that are just percentage summaries (e.g., "                                                                     [ 43%]")
+                # Also skip lines that contain only spaces and percentage
+                stripped_line = line.strip()
+                if (stripped_line.startswith('[') and stripped_line.endswith('%]') and stripped_line.count('[') == 1) or \
+                   (stripped_line and stripped_line.count(' ') > 50 and '[' in stripped_line and '%]' in stripped_line) or \
+                   (line.rstrip().endswith('%]') and line.count('[') == 1 and line.count('%]') == 1):
+                    continue
+                filtered_lines.append(line)
+            
+            # Write filtered output
+            self.original_stdout.write('\n'.join(filtered_lines))
+        
+        def flush(self):
+            self.original_stdout.flush()
+    
+    def pytest_runtest_protocol(self, item, nextitem):
+        """Suppress pytest's default progress reporting"""
+        # This prevents pytest from printing its own progress indicators
+        pass
+    
+    def pytest_runtest_logstart(self, nodeid, location):
+        """Suppress pytest's progress reporting at test start"""
+        # This prevents pytest from printing percentage summaries
+        pass
+    
+    def pytest_runtest_logfinish(self, nodeid, location):
+        """Suppress pytest's progress reporting at test finish"""
+        # This prevents pytest from printing percentage summaries
+        pass
 
 def pytest_configure(config):
     """Configure pytest with custom settings and metadata."""
