@@ -79,7 +79,7 @@ class HierarchicalTestReporter:
     def _print_component_header(self, component):
         """Print component header"""
         indent = "    "  # Indent for component under layer
-        # Add newline before component header (except for the first one)
+        # Add newline before component header (except for the first one in a layer)
         if not self._first_component:
             print()
         print(f"{indent}{component.replace('_', ' ').title()}/")
@@ -139,9 +139,10 @@ class HierarchicalTestReporter:
             current_layer = f"{parts['test_type']}/{parts['layer']}"
             
             if current_layer != self._current_layer:
-                # Print the layer header
+                # Print the layer header only once per layer
                 self._print_layer_header(parts['test_type'], parts['layer'])
                 self._current_layer = current_layer
+                self._first_component = True  # Reset for new layer
             
             # Check if we need to print a component header
             current_component = f"{parts['test_type']}/{parts['layer']}/{parts['component']}"
@@ -151,13 +152,9 @@ class HierarchicalTestReporter:
                 self._printed_headers.add(current_component)
                 self._first_component = False
             
-            # Print test result with "." prefix for first test in each file
+            # Print test result
             outcome = report.outcome
             duration = report.duration if hasattr(report, 'duration') else None
-            
-            # Add "." prefix for the first test to match pytest output
-            if self.test_count == 0:
-                print(".", end="", flush=True)
             
             self._print_test_result(report.nodeid, outcome, duration)
             

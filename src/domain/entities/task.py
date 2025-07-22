@@ -43,6 +43,10 @@ class Task:
     self.status = new_status
     self.updated_at = datetime.now(timezone.utc)
 
+    # Set completed_at when task is completed
+    if new_status == TaskStatus.COMPLETED:
+      self.completed_at = self.updated_at
+
     # Fire status change event
     self._events.append(TaskStatusChanged(
       event_id="",
