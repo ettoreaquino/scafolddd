@@ -1,7 +1,7 @@
 # Backend Tutorial DDD Makefile
-# Simple utility for running milestone sanity checks
+# Simple utility for running tests and development tasks
 
-.PHONY: help milestone-part2 milestone-all clean test test-html test-parallel test-unit test-domain test-slow test-coverage
+.PHONY: help clean test test-html test-parallel test-unit test-domain test-slow test-coverage
 .DEFAULT_GOAL := help
 
 # Colors for output
@@ -25,8 +25,6 @@ help: ## Show available commands
 	@echo "$(GREEN)test-slow$(NC)         Run only slow tests"
 	@echo "$(GREEN)test-coverage$(NC)     Run tests with coverage report"
 	@echo ""
-	@echo "$(GREEN)milestone-part2$(NC)    Run Part 2: Domain Layer verification"
-	@echo "$(GREEN)milestone-all$(NC)      Run all available milestone verifications"
 	@echo "$(GREEN)clean$(NC)              Clean up generated files"
 	@echo "$(GREEN)help$(NC)               Show this help message"
 
@@ -58,22 +56,7 @@ test-coverage: ## Run tests with coverage report
 	@echo "$(BLUE)Running tests with coverage...$(NC)"
 	poetry run pytest --cov=src --cov-report=html:reports/coverage --cov-report=term-missing
 
-milestone-part2: ## Verify Part 2: Domain Layer Implementation
-	@echo "$(BLUE)Running Part 2: Domain Layer Verification...$(NC)"
-	@PYTHONPATH=. $(PYTHON) milestones/milestone_part2_domain_layer.py
 
-milestone-part3: ## Verify Part 3: Application Layer Implementation
-	@echo "$(BLUE)Running Part 3: Application Layer Verification...$(NC)"
-	@PYTHONPATH=. $(PYTHON) milestones/milestone_part3_application_layer.py
-
-milestone-all: ## Run all available milestone verifications
-	@echo "$(BLUE)Running Available Milestone Verifications...$(NC)"
-	@echo "$(YELLOW)Currently available: Part 2 (Domain Layer)$(NC)"
-	@echo ""
-	@$(MAKE) milestone-part2
-	@$(MAKE) milestone-part3
-	@echo ""
-	@echo "$(GREEN)✅ All available milestone verifications completed!$(NC)"
 
 clean: ## Clean up generated files and caches
 	@echo "$(BLUE)Cleaning up...$(NC)"
