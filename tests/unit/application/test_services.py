@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from src.application.services.complete_task import CompleteTaskService
 from src.application.services.create_task import CreateTaskService
 from src.application.services.get_task import GetTaskService
+from src.application.services.list_tasks import ListTasksService
 from src.domain.entities.task import Task
 from src.domain.value_objects import TaskId, UserId, TaskStatus
 from src.domain.events import TaskCompleted, TaskStatusChanged, TaskCreated
@@ -28,11 +29,17 @@ class MockTaskRepository:
         self.tasks = {}
         self.save_called = False
         self.find_by_id_calls = []
+        self.find_by_user_id_calls = []
     
     async def find_by_id(self, task_id) -> Task:
         """Mock find_by_id method"""
         self.find_by_id_calls.append(task_id)
         return self.tasks.get(str(task_id))
+    
+    async def find_by_user_id(self, user_id) -> list[Task]:
+        """Mock find_by_user_id method"""
+        self.find_by_user_id_calls.append(user_id)
+        return [task for task in self.tasks.values() if task.user_id == user_id]
     
     async def save(self, task: Task) -> None:
         """Mock save method"""
@@ -142,6 +149,18 @@ def create_task_service(task_repository, event_bus):
 def get_task_service(task_repository):
     """Create a GetTaskService instance with mocked dependencies"""
     return GetTaskService(task_repository)
+
+
+@pytest.fixture
+def list_tasks_service(task_repository):
+    """Create a ListTasksService instance with mocked dependencies"""
+    return ListTasksService(task_repository)
+
+
+@pytest.fixture
+def list_tasks_service(task_repository):
+    """Create a ListTasksService instance with mocked dependencies"""
+    return ListTasksService(task_repository)
 
 
 @pytest.fixture
@@ -922,3 +941,251 @@ class TestGetTaskServiceEdgeCases:
         
         assert result is not None
         assert_task_data_structure(result, in_progress_task) 
+
+
+@pytest.mark.application
+@pytest.mark.unit
+class TestListTasksServiceInitialization:
+    """Test ListTasksService initialization and dependency injection"""
+    
+    def test_service_initialization_with_dependencies(self, task_repository):
+        """Test that service can be initialized with dependencies"""
+        service = ListTasksService(task_repository)
+        
+        assert service._task_repository == task_repository
+
+
+@pytest.mark.application
+@pytest.mark.unit
+class TestListTasksServiceInputValidation:
+    """Test input validation in ListTasksService"""
+    
+    @pytest.mark.asyncio
+    async def test_execute_with_none_user_id_raises_error(self, list_tasks_service):
+        """Test that None user_id raises ValueError"""
+        with pytest.raises(ValueError, match="User ID is required"):
+            await list_tasks_service.execute(None)
+    
+    @pytest.mark.asyncio
+    async def test_execute_with_empty_user_id_raises_error(self, list_tasks_service):
+        """Test that empty user_id raises ValueError"""
+        with pytest.raises(ValueError, match="User ID is required"):
+            await list_tasks_service.execute("")
+    
+    @pytest.mark.asyncio
+    async def test_execute_with_whitespace_user_id_raises_error(self, list_tasks_service):
+        """Test that whitespace-only user_id raises ValueError"""
+        with pytest.raises(ValueError, match="User ID is required"):
+            await list_tasks_service.execute("   ")
+    
+    @pytest.mark.asyncio
+    async def test_execute_with_valid_user_id_does_not_raise_error(self, list_tasks_service, task_repository):
+        """Test that valid user_id doesn't raise validation error"""
+        try:
+            result = await list_tasks_service.execute("user-123")
+            assert isinstance(result, list)
+        except ValueError:
+            pytest.fail("Valid user_id should not raise ValueError")
+
+
+@pytest.mark.application
+@pytest.mark.unit
+class TestListTasksServiceSuccessfulRetrieval:
+    """Test ListTasksService successful retrieval scenarios"""
+    
+    @pytest.mark.asyncio
+    async def test_execute_with_user_with_tasks_returns_task_list(self, list_tasks_service, task_repository, pending_task, in_progress_task):
+        """Test that user with tasks returns list of tasks"""
+        task_repository.tasks[str(pending_task.id)] = pending_task
+        task_repository.tasks[str(in_progress_task.id)] = in_progress_task
+        
+        result = await list_tasks_service.execute(str(pending_task.user_id))
+        
+        assert isinstance(result, list)
+        assert len(result) == 2
+        
+        task_ids = [task["task_id"] for task in result]
+        assert str(pending_task.id) in task_ids
+        assert str(in_progress_task.id) in task_ids
+    
+    @pytest.mark.asyncio
+    async def test_execute_with_user_with_no_tasks_returns_empty_list(self, list_tasks_service, task_repository):
+        """Test that user with no tasks returns empty list"""
+        result = await list_tasks_service.execute("user-with-no-tasks")
+        
+        assert isinstance(result, list)
+        assert len(result) == 0
+    
+    @pytest.mark.asyncio
+    async def test_execute_returns_correct_data_structure_for_each_task(self, list_tasks_service, task_repository, pending_task, completed_task):
+        """Test that each task in the list has correct data structure"""
+        task_repository.tasks[str(pending_task.id)] = pending_task
+        task_repository.tasks[str(completed_task.id)] = completed_task
+        
+        result = await list_tasks_service.execute(str(pending_task.user_id))
+        
+        assert len(result) == 2
+        
+        for task_data in result:
+            assert "task_id" in task_data
+            assert "title" in task_data
+            assert "description" in task_data
+            assert "status" in task_data
+            assert "created_at" in task_data
+            assert "updated_at" in task_data
+            assert "completed_at" in task_data
+            assert "user_id" in task_data
+    
+    @pytest.mark.asyncio
+    async def test_execute_trims_whitespace_from_user_id(self, list_tasks_service, task_repository, pending_task):
+        """Test that user_id whitespace is trimmed before processing"""
+        task_repository.tasks[str(pending_task.id)] = pending_task
+        user_id_with_whitespace = f"  {str(pending_task.user_id)}  "
+        
+        result = await list_tasks_service.execute(user_id_with_whitespace)
+        
+        assert len(result) == 1
+        assert result[0]["task_id"] == str(pending_task.id)
+
+
+@pytest.mark.application
+@pytest.mark.unit
+class TestListTasksServiceRepositoryInteraction:
+    """Test ListTasksService repository interaction"""
+    
+    @pytest.mark.asyncio
+    async def test_execute_calls_repository_with_user_id(self, list_tasks_service, task_repository, pending_task):
+        """Test that repository is called with user ID"""
+        task_repository.tasks[str(pending_task.id)] = pending_task
+        
+        await list_tasks_service.execute(str(pending_task.user_id))
+        
+        assert len(task_repository.find_by_user_id_calls) == 1
+        assert task_repository.find_by_user_id_calls[0] == UserId(str(pending_task.user_id))
+    
+    @pytest.mark.asyncio
+    async def test_execute_calls_repository_only_once(self, list_tasks_service, task_repository, pending_task):
+        """Test that repository is called only once"""
+        task_repository.tasks[str(pending_task.id)] = pending_task
+        
+        await list_tasks_service.execute(str(pending_task.user_id))
+        
+        assert len(task_repository.find_by_user_id_calls) == 1
+
+
+@pytest.mark.application
+@pytest.mark.unit
+class TestListTasksServiceReturnValue:
+    """Test ListTasksService return value structure"""
+    
+    @pytest.mark.asyncio
+    async def test_execute_returns_list_of_task_data(self, list_tasks_service, task_repository, pending_task, in_progress_task, completed_task):
+        """Test that execute returns list of task data"""
+        task_repository.tasks[str(pending_task.id)] = pending_task
+        task_repository.tasks[str(in_progress_task.id)] = in_progress_task
+        task_repository.tasks[str(completed_task.id)] = completed_task
+        
+        result = await list_tasks_service.execute(str(pending_task.user_id))
+        
+        assert isinstance(result, list)
+        assert len(result) == 3
+        
+        # Create a mapping of task IDs to tasks for validation
+        tasks_map = {
+            str(pending_task.id): pending_task,
+            str(in_progress_task.id): in_progress_task,
+            str(completed_task.id): completed_task
+        }
+        
+        for task_data in result:
+            task_id = task_data["task_id"]
+            assert task_id in tasks_map, f"Task ID {task_id} not found in expected tasks"
+            assert_task_data_structure(task_data, tasks_map[task_id])
+    
+    @pytest.mark.asyncio
+    async def test_execute_returns_iso_format_timestamps(self, list_tasks_service, task_repository, completed_task):
+        """Test that timestamps are returned in ISO format"""
+        task_repository.tasks[str(completed_task.id)] = completed_task
+        
+        result = await list_tasks_service.execute(str(completed_task.user_id))
+        
+        assert len(result) == 1
+        task_data = result[0]
+        
+        assert task_data["created_at"] is not None
+        assert task_data["updated_at"] is not None
+        assert task_data["completed_at"] is not None
+        
+        try:
+            datetime.fromisoformat(task_data["created_at"])
+            datetime.fromisoformat(task_data["updated_at"])
+            datetime.fromisoformat(task_data["completed_at"])
+        except ValueError:
+            pytest.fail("Timestamps should be in ISO format")
+    
+    @pytest.mark.asyncio
+    async def test_execute_returns_none_for_missing_timestamps(self, list_tasks_service, task_repository):
+        """Test that missing timestamps return None"""
+        task_without_timestamps = create_task_with_status(
+            TASK_ID_1, USER_ID_1, TASK_TITLE, TASK_DESCRIPTION, TaskStatus.PENDING
+        )
+        task_without_timestamps.updated_at = None
+        task_without_timestamps.completed_at = None
+        task_repository.tasks[str(task_without_timestamps.id)] = task_without_timestamps
+        
+        result = await list_tasks_service.execute(str(task_without_timestamps.user_id))
+        
+        assert len(result) == 1
+        task_data = result[0]
+        assert task_data["updated_at"] is None
+        assert task_data["completed_at"] is None
+        assert task_data["created_at"] is not None
+
+
+@pytest.mark.application
+@pytest.mark.unit
+class TestListTasksServiceEdgeCases:
+    """Test ListTasksService edge cases"""
+    
+    @pytest.mark.asyncio
+    async def test_execute_with_multiple_users_returns_only_user_tasks(self, list_tasks_service, task_repository):
+        """Test that only tasks for the specified user are returned"""
+        user1_task = create_task_with_status(TASK_ID_1, USER_ID_1, "User 1 Task", "Description", TaskStatus.PENDING)
+        user2_task = create_task_with_status(TASK_ID_2, USER_ID_2, "User 2 Task", "Description", TaskStatus.PENDING)
+        
+        task_repository.tasks[str(user1_task.id)] = user1_task
+        task_repository.tasks[str(user2_task.id)] = user2_task
+        
+        result = await list_tasks_service.execute(USER_ID_1)
+        
+        assert len(result) == 1
+        assert result[0]["task_id"] == str(user1_task.id)
+        assert result[0]["user_id"] == USER_ID_1
+    
+    @pytest.mark.asyncio
+    async def test_execute_with_tasks_in_different_statuses(self, list_tasks_service, task_repository, pending_task, in_progress_task, completed_task, cancelled_task):
+        """Test that tasks in different statuses are all returned"""
+        task_repository.tasks[str(pending_task.id)] = pending_task
+        task_repository.tasks[str(in_progress_task.id)] = in_progress_task
+        task_repository.tasks[str(completed_task.id)] = completed_task
+        task_repository.tasks[str(cancelled_task.id)] = cancelled_task
+        
+        result = await list_tasks_service.execute(str(pending_task.user_id))
+        
+        assert len(result) == 4
+        
+        statuses = [task["status"] for task in result]
+        assert str(TaskStatus.PENDING) in statuses
+        assert str(TaskStatus.IN_PROGRESS) in statuses
+        assert str(TaskStatus.COMPLETED) in statuses
+        assert str(TaskStatus.CANCELLED) in statuses
+    
+    @pytest.mark.asyncio
+    async def test_execute_preserves_all_task_properties(self, list_tasks_service, task_repository, in_progress_task):
+        """Test that all task properties are preserved in the response"""
+        task_repository.tasks[str(in_progress_task.id)] = in_progress_task
+        
+        result = await list_tasks_service.execute(str(in_progress_task.user_id))
+        
+        assert len(result) == 1
+        assert_task_data_structure(result[0], in_progress_task) 
