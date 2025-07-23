@@ -12,7 +12,7 @@
 - [Infrastructure Layer Implementation](#infrastructure-layer-implementation)
 - [API Adapter Layer Implementation](#api-adapter-layer-implementation)
 - [CDK Infrastructure Implementation](#cdk-infrastructure-implementation)
-- [Testing Implementation](#testing-implementation)
+
 - [Deployment and Testing](#deployment-and-testing)
 - [Production Readiness](#production-readiness)
 - [API Documentation](#api-documentation)
@@ -552,9 +552,9 @@ from .task_repository import TaskRepository
 __all__ = ['TaskRepository']
 ```
 
-**✅ Test Domain Layer:**
+**✅ Test Domain Layer (TDD Approach):**
 
-This is a **quick verification script** to ensure your domain layer is working correctly before moving forward. Create this as a temporary test file:
+Following TDD principles, you should write comprehensive unit tests for your domain layer. Here's a quick verification script to ensure your domain layer is working correctly before moving forward:
 
 ```python
 # test_domain_verification.py (create in project root - temporary file)
@@ -618,7 +618,7 @@ rm test_domain_verification.py
 🎉 Domain layer working correctly!
 ```
 
-> **Note:** This is a **temporary verification script**, not a unit test. We'll create proper unit tests later in the [Testing Implementation](#testing-implementation) section.
+> **Note:** This is a **temporary verification script**. For proper TDD approach, see [TESTS.md](TESTS.md) for comprehensive testing strategy.
 
 ---
 
@@ -836,9 +836,9 @@ __all__ = [
 ]
 ```
 
-**✅ Verify Application Layer Implementation:**
+**✅ Verify Application Layer Implementation (TDD Approach):**
 
-Create a simple verification script to test that your Application Layer is working correctly:
+Following TDD principles, you should write comprehensive unit tests for your application services. Here's a quick verification script to test that your Application Layer is working correctly:
 
 ```python
 # test_application_verification.py (temporary file in project root)
@@ -2155,267 +2155,69 @@ app.synth()
 
 ---
 
-## 🧪 Testing Implementation
+## 🧪 Testing Strategy
 
-> **Comprehensive testing ensures reliability and maintainability.**
+> **This project follows Test-Driven Development (TDD) principles with comprehensive testing.**
 
-### Step 20: Configure Testing Environment
+### Testing Approach
 
-```python
-# tests/conftest.py
-import pytest
-import os
-import asyncio
-from moto import mock_aws
-from dependency_injector import containers, providers
-from src.infrastructure.container import Container
+We use a **TDD-first approach** where tests are written before implementation. This ensures:
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+- ✅ **Reliability** - All code is tested before deployment
+- ✅ **Maintainability** - Tests serve as living documentation
+- ✅ **Fast feedback** - Issues are caught early in development
+- ✅ **Confidence** - Changes can be made safely with test coverage
 
-@pytest.fixture(scope="function")
-def aws_credentials():
-    """Mocked AWS Credentials for moto."""
-    os.environ["AWS_ACCESS_KEY_ID"] = "testing"
-    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
-    os.environ["AWS_SECURITY_TOKEN"] = "testing"
-    os.environ["AWS_SESSION_TOKEN"] = "testing"
-    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+### Test Structure
 
-@pytest.fixture(scope="function")
-def dynamodb_table(aws_credentials):
-    """Create mocked DynamoDB table."""
-    with mock_aws():
-        import boto3
-        dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
-        
-        table = dynamodb.create_table(
-            TableName="test-tasks",
-            KeySchema=[
-                {"AttributeName": "PK", "KeyType": "HASH"},
-                {"AttributeName": "SK", "KeyType": "RANGE"}
-            ],
-            AttributeDefinitions=[
-                {"AttributeName": "PK", "AttributeType": "S"},
-                {"AttributeName": "SK", "AttributeType": "S"},
-                {"AttributeName": "GSI1PK", "AttributeType": "S"},
-                {"AttributeName": "GSI1SK", "AttributeType": "S"}
-            ],
-            GlobalSecondaryIndexes=[
-                {
-                    "IndexName": "GSI1",
-                    "KeySchema": [
-                        {"AttributeName": "GSI1PK", "KeyType": "HASH"},
-                        {"AttributeName": "GSI1SK", "KeyType": "RANGE"}
-                    ],
-                    "Projection": {"ProjectionType": "ALL"},
-                    "BillingMode": "PAY_PER_REQUEST"
-                }
-            ],
-            BillingMode="PAY_PER_REQUEST"
-        )
-        
-        yield table
+Our testing follows CLEAN Architecture layers:
 
-@pytest.fixture(scope="function")
-def test_container(dynamodb_table):
-    """Create test dependency injection container."""
-    container = Container()
-    container.config.table_name.from_value("test-tasks")
-    container.config.topic_arn.from_value("arn:aws:sns:us-east-1:123456789012:test-topic")
-    return container
+```
+tests/
+├── unit/                       # Unit tests (fast, isolated)
+│   ├── domain/                 # Domain layer tests
+│   │   ├── test_entities.py    # Entity tests (23 tests)
+│   │   ├── test_value_objects.py # Value object tests (4 tests)
+│   │   ├── test_events.py      # Domain event tests (18 tests)
+│   │   └── test_repositories.py # Repository interface tests (29 tests)
+│   └── application/            # Application layer tests
+│       └── test_services.py    # Service tests (74 tests)
+├── integration/                # Integration tests (planned)
+└── e2e/                        # End-to-end tests (planned)
 ```
 
-### Step 21: Create Unit Tests
+### Running Tests
 
-```python
-# tests/unit/test_task_entity.py
-import pytest
-from datetime import datetime, timezone
-from src.domain.entities import Task
-from src.domain.value_objects import TaskId, UserId, TaskStatus
-from src.domain.events import TaskCreated, TaskCompleted
+```bash
+# Run all tests (168 tests)
+make test
 
-class TestTask:
-    def test_task_creation_generates_event(self):
-        """Test that creating a task generates TaskCreated event"""
-        task = Task(
-            id=TaskId("task-123"),
-            user_id=UserId("user-456"),
-            title="Test Task",
-            description="Test Description",
-            status=TaskStatus.PENDING,
-            created_at=datetime.now(timezone.utc)
-        )
-        
-        events = task.pop_events()
-        assert len(events) == 1
-        assert isinstance(events[0], TaskCreated)
-        assert events[0].task_title == "Test Task"
-        assert events[0].user_id == "user-456"
-    
-    def test_task_completion_generates_events(self):
-        """Test that completing a task generates appropriate events"""
-        task = Task(
-            id=TaskId("task-123"),
-            user_id=UserId("user-456"),
-            title="Test Task",
-            description="Test Description",
-            status=TaskStatus.PENDING,
-            created_at=datetime.now(timezone.utc)
-        )
-        
-        # Clear creation event
-        task.pop_events()
-        
-        # Complete the task
-        task.update_status(TaskStatus.COMPLETED)
-        
-        events = task.pop_events()
-        assert len(events) == 2  # StatusChanged + TaskCompleted
-        
-        # Find the TaskCompleted event
-        completed_events = [e for e in events if isinstance(e, TaskCompleted)]
-        assert len(completed_events) == 1
-        assert completed_events[0].task_title == "Test Task"
-    
-    def test_task_validation(self):
-        """Test task validation rules"""
-        # Empty title should raise error
-        with pytest.raises(ValueError, match="Task title cannot be empty"):
-            Task(
-                id=TaskId("task-123"),
-                user_id=UserId("user-456"),
-                title="",
-                description="Test",
-                status=TaskStatus.PENDING,
-                created_at=datetime.now(timezone.utc)
-            )
-        
-        # Long title should raise error
-        with pytest.raises(ValueError, match="Task title cannot exceed 200 characters"):
-            Task(
-                id=TaskId("task-123"),
-                user_id=UserId("user-456"),
-                title="x" * 201,
-                description="Test",
-                status=TaskStatus.PENDING,
-                created_at=datetime.now(timezone.utc)
-            )
+# Run only unit tests
+make test-unit
+
+# Run only domain layer tests
+make test-domain
+
+# Run tests with coverage
+make test-coverage
 ```
 
-### Step 22: Create Integration Tests
+### Test Coverage
 
-```python
-# tests/integration/test_dynamodb_repository.py
-import pytest
-from datetime import datetime, timezone
-from src.infrastructure.repositories import DynamoDBTaskRepository
-from src.domain.entities import Task
-from src.domain.value_objects import TaskId, UserId, TaskStatus
+- **Total Tests:** 168
+- **Domain Layer:** 74 tests
+- **Application Layer:** 74 tests
+- **Execution Time:** ~0.3 seconds
+- **Coverage Target:** 80%+
 
-@pytest.mark.asyncio
-class TestDynamoDBTaskRepository:
-    async def test_save_and_find_task(self, dynamodb_table):
-        """Test saving and finding a task"""
-        repository = DynamoDBTaskRepository("test-tasks")
-        
-        # Create a task
-        task = Task(
-            id=TaskId("task-123"),
-            user_id=UserId("user-456"),
-            title="Test Task",
-            description="Test Description",
-            status=TaskStatus.PENDING,
-            created_at=datetime.now(timezone.utc)
-        )
-        
-        # Save task
-        await repository.save(task)
-        
-        # Find task
-        found_task = await repository.find_by_id(TaskId("task-123"))
-        
-        assert found_task is not None
-        assert found_task.id == task.id
-        assert found_task.title == task.title
-        assert found_task.user_id == task.user_id
-        assert found_task.status == task.status
-    
-    async def test_find_by_user_id(self, dynamodb_table):
-        """Test finding tasks by user ID"""
-        repository = DynamoDBTaskRepository("test-tasks")
-        user_id = UserId("user-456")
-        
-        # Create multiple tasks for the same user
-        tasks = []
-        for i in range(3):
-            task = Task(
-                id=TaskId(f"task-{i}"),
-                user_id=user_id,
-                title=f"Task {i}",
-                description=f"Description {i}",
-                status=TaskStatus.PENDING,
-                created_at=datetime.now(timezone.utc)
-            )
-            tasks.append(task)
-            await repository.save(task)
-        
-        # Find tasks by user ID
-        found_tasks = await repository.find_by_user_id(user_id)
-        
-        assert len(found_tasks) == 3
-        assert all(t.user_id == user_id for t in found_tasks)
-```
+### TDD Workflow
 
-### Step 23: Create API Tests
+1. **Write failing test** - Define expected behavior
+2. **Implement minimal code** - Make test pass
+3. **Refactor** - Clean up while keeping tests green
+4. **Repeat** - Continue with next feature
 
-```python
-# tests/integration/test_api_handlers.py
-import pytest
-import json
-from unittest.mock import AsyncMock, patch
-from src.adapters.api.create_task import lambda_handler as create_handler
-from src.adapters.api.get_task import lambda_handler as get_handler
-
-@pytest.mark.asyncio
-class TestAPIHandlers:
-    @patch('src.adapters.api.create_task.create_container')
-    async def test_create_task_success(self, mock_container):
-        """Test successful task creation via API"""
-        # Mock service
-        mock_service = AsyncMock()
-        mock_service.execute.return_value = {
-            "task_id": "task-123",
-            "title": "Test Task",
-            "status": "pending",
-            "user_id": "user-456"
-        }
-        
-        mock_container.return_value.create_task.return_value = mock_service
-        
-        # Create test event
-        event = {
-            "body": json.dumps({
-                "user_id": "user-456",
-                "title": "Test Task",
-                "description": "Test Description"
-            })
-        }
-        
-        # Execute handler
-        response = await create_handler(event, {})
-        
-        # Verify response
-        assert response["statusCode"] == 201
-        body = json.loads(response["body"])
-        assert body["success"] is True
-        assert body["data"]["task_id"] == "task-123"
-```
+For detailed testing documentation, see [TESTS.md](TESTS.md).
 
 ---
 
@@ -2423,7 +2225,7 @@ class TestAPIHandlers:
 
 > **Deploy your application to AWS and verify everything works.**
 
-### Step 24: Configure Project Dependencies
+### Step 20: Configure Project Dependencies
 
 ```toml
 # pyproject.toml (update the complete file)
@@ -2486,24 +2288,24 @@ line_length = 100
 multi_line_output = 3
 ```
 
-### Step 25: Run Tests
+### Step 21: Verify Tests and Deploy
 
 ```bash
 # Install dependencies
 poetry install
 
-# Run tests
-poetry run pytest -v
+# Run all tests to ensure everything works
+make test
 
-# Run linting
+# Run linting and type checking
 poetry run black src/ tests/
 poetry run isort src/ tests/
 poetry run mypy src/
 ```
 
-**✅ Verification:** All tests should pass before deployment.
+**✅ Verification:** All 168 tests should pass before deployment.
 
-### Step 26: Deploy with CDK
+### Step 22: Deploy with CDK
 
 ```bash
 # Navigate to CDK directory
@@ -2527,7 +2329,7 @@ cdk deploy BackendTutorialStagingStack
 - Note the API URL and documentation URL from outputs
 - Check AWS Console to verify resources were created
 
-### Step 27: Test the Deployed API
+### Step 23: Test the Deployed API
 
 ```python
 # scripts/test_deployed_api.py
@@ -2641,7 +2443,7 @@ poetry run python scripts/test_deployed_api.py https://your-api-id.execute-api.u
 
 > **Essential configurations for production deployment.**
 
-### Step 28: Environment Configuration
+### Step 24: Environment Configuration
 
 ```python
 # src/commons/config/settings.py
@@ -2679,7 +2481,7 @@ class Settings:
 settings = Settings()
 ```
 
-### Step 29: Monitoring and Alerts
+### Step 25: Monitoring and Alerts
 
 ```python
 # Add to CDK stack for production monitoring
@@ -2720,7 +2522,7 @@ settings = Settings()
         )
 ```
 
-### Step 30: Security Enhancements
+### Step 26: Security Enhancements
 
 ```python
 # Add API key requirement and rate limiting to CDK stack
