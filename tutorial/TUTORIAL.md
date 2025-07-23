@@ -553,7 +553,7 @@ __all__ = ['TaskRepository']
 
 **✅ Test Domain Layer (TDD Approach):**
 
-Following TDD principles, you should write comprehensive unit tests for your domain layer. See [DOMAIN_LAYER.md](../tests/DOMAIN_LAYER.md) for complete testing implementation.
+Following TDD principles, you should write comprehensive unit tests for your domain layer. See [tests/DOMAIN_LAYER.md](tests/DOMAIN_LAYER.md) for complete testing implementation.
 
 **Quick verification:** Run the domain tests to ensure everything works:
 
@@ -782,7 +782,7 @@ __all__ = [
 
 **✅ Verify Application Layer Implementation (TDD Approach):**
 
-Following TDD principles, you should write comprehensive unit tests for your application services. See [APPLICATION_LAYER.md](../tests/APPLICATION_LAYER.md) for complete testing implementation.
+Following TDD principles, you should write comprehensive unit tests for your application services. See [tests/APPLICATION_LAYER.md](tests/APPLICATION_LAYER.md) for complete testing implementation.
 
 **Quick verification:** Run the application tests to ensure everything works:
 
@@ -1023,6 +1023,19 @@ def create_container() -> Container:
     container.config.topic_arn.from_env("TOPIC_ARN", required=True)
     
     return container
+```
+
+**✅ Verify Infrastructure Layer Implementation (TDD Approach):**
+
+Following TDD principles, you should write comprehensive unit and integration tests for your infrastructure layer. See [tests/INFRASTRUCTURE_LAYER.md](tests/INFRASTRUCTURE_LAYER.md) for complete testing implementation.
+
+**Quick verification:** Run the infrastructure tests to ensure everything works:
+
+```bash
+# Run infrastructure layer tests
+poetry run pytest tests/unit/infrastructure/ -v
+
+# Expected output: 50+ tests passing
 ```
 
 ---
@@ -1444,6 +1457,19 @@ async def process_task_created(event_data: Dict[str, Any]) -> None:
     # - Send welcome email
     # - Update user onboarding progress
     # - Analytics tracking
+```
+
+**✅ Verify API Adapter Layer Implementation (TDD Approach):**
+
+Following TDD principles, you should write comprehensive unit, integration, and end-to-end tests for your API layer. See [tests/API_LAYER.md](tests/API_LAYER.md) for complete testing implementation.
+
+**Quick verification:** Run the API tests to ensure everything works:
+
+```bash
+# Run API layer tests
+poetry run pytest tests/unit/api/ -v
+
+# Expected output: 60+ tests passing
 ```
 
 ---
@@ -2049,6 +2075,23 @@ BackendTutorialStack(
 app.synth()
 ```
 
+**✅ Verify CDK Infrastructure Implementation (TDD Approach):**
+
+Following TDD principles, you should write comprehensive unit and integration tests for your CDK infrastructure. See [tests/CDK_DEPLOYMENT.md](tests/CDK_DEPLOYMENT.md) for complete testing implementation.
+
+**Quick verification:** Run the CDK tests to ensure everything works:
+
+```bash
+# Run CDK infrastructure tests
+poetry run pytest tests/unit/cdk/ -v
+
+# Synthesize CDK stacks to verify they're valid
+cd infrastructure/cdk
+cdk synth
+
+# Expected output: 40+ tests passing
+```
+
 ---
 
 ## 🧪 Testing Strategy
@@ -2113,7 +2156,14 @@ make test-coverage
 3. **Refactor** - Clean up while keeping tests green
 4. **Repeat** - Continue with next feature
 
-For detailed testing documentation, see [TESTS.md](TESTS.md).
+For detailed testing documentation, see the individual testing guides:
+- [Domain Layer Testing](tests/DOMAIN_LAYER.md)
+- [Application Layer Testing](tests/APPLICATION_LAYER.md)
+- [Infrastructure Layer Testing](tests/INFRASTRUCTURE_LAYER.md)
+- [API Layer Testing](tests/API_LAYER.md)
+- [CDK Deployment Testing](tests/CDK_DEPLOYMENT.md)
+
+For understanding event flow, see [EVENT_FLOW.md](EVENT_FLOW.md).
 
 ---
 
