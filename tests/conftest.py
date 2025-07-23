@@ -394,3 +394,23 @@ def setup_test_environment():
     
     # Cleanup if needed
     pass 
+
+
+@pytest.fixture(autouse=True)
+def mock_aws_credentials():
+    """Mock AWS credentials to prevent boto3 from looking for real ones"""
+    import os
+    os.environ["AWS_ACCESS_KEY_ID"] = "testing"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
+    os.environ["AWS_SECURITY_TOKEN"] = "testing"
+    os.environ["AWS_SESSION_TOKEN"] = "testing"
+    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create an instance of the default event loop for the test session."""
+    import asyncio
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close() 
