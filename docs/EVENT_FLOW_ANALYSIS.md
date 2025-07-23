@@ -274,7 +274,7 @@ Command → [Business Rules Check] → State Change → Event(s) → Policy Reac
 | Event Storming Element | Code Implementation | File Location |
 |------------------------|-------------------|---------------|
 | 🟠 Domain Events | `DomainEvent` classes | `src/domain/events/` |
-| 🔵 Commands | Use case classes | `src/application/use_cases/` |
+| 🔵 Commands | Service classes | `src/application/services/` |
 | 🟡 Task Aggregate | `Task` entity | `src/domain/entities/task.py` |
 | 🟣 Policies | Event handlers | `src/adapters/events/` |
 | 🟢 Read Models | API responses | `src/adapters/api/` |

@@ -1,7 +1,7 @@
 # Backend Tutorial DDD Makefile
-# Simple utility for running milestone sanity checks
+# Simple utility for running tests and development tasks
 
-.PHONY: help milestone-part2 milestone-all clean
+.PHONY: help clean test test-html test-parallel test-unit test-domain test-slow test-coverage
 .DEFAULT_GOAL := help
 
 # Colors for output
@@ -17,22 +17,46 @@ help: ## Show available commands
 	@echo "$(BLUE)Backend Tutorial DDD - Available Commands$(NC)"
 	@echo "========================================"
 	@echo ""
-	@echo "$(GREEN)milestone-part2$(NC)    Run Part 2: Domain Layer verification"
-	@echo "$(GREEN)milestone-all$(NC)      Run all available milestone verifications"
+	@echo "$(GREEN)test$(NC)              Run all tests with pytest"
+	@echo "$(GREEN)test-html$(NC)         Run tests and generate HTML report"
+	@echo "$(GREEN)test-parallel$(NC)     Run tests in parallel (faster)"
+	@echo "$(GREEN)test-unit$(NC)         Run only unit tests"
+	@echo "$(GREEN)test-domain$(NC)       Run only domain layer tests"
+	@echo "$(GREEN)test-slow$(NC)         Run only slow tests"
+	@echo "$(GREEN)test-coverage$(NC)     Run tests with coverage report"
+	@echo ""
 	@echo "$(GREEN)clean$(NC)              Clean up generated files"
 	@echo "$(GREEN)help$(NC)               Show this help message"
 
-milestone-part2: ## Verify Part 2: Domain Layer Implementation
-	@echo "$(BLUE)Running Part 2: Domain Layer Verification...$(NC)"
-	@PYTHONPATH=. $(PYTHON) milestones/milestone_part2_domain_layer.py
+test: ## Run all tests with pytest
+	@echo "$(BLUE)Running all tests...$(NC)"
+	poetry run pytest
 
-milestone-all: ## Run all available milestone verifications
-	@echo "$(BLUE)Running Available Milestone Verifications...$(NC)"
-	@echo "$(YELLOW)Currently available: Part 2 (Domain Layer)$(NC)"
-	@echo ""
-	@$(MAKE) milestone-part2
-	@echo ""
-	@echo "$(GREEN)✅ All available milestone verifications completed!$(NC)"
+test-html: ## Run tests and generate HTML report
+	@echo "$(BLUE)Running tests with HTML report...$(NC)"
+	poetry run pytest --html=reports/pytest-report.html --self-contained-html
+
+test-parallel: ## Run tests in parallel (faster)
+	@echo "$(BLUE)Running tests in parallel...$(NC)"
+	poetry run pytest -n auto
+
+test-unit: ## Run only unit tests
+	@echo "$(BLUE)Running unit tests...$(NC)"
+	poetry run pytest -m unit
+
+test-domain: ## Run only domain layer tests
+	@echo "$(BLUE)Running domain layer tests...$(NC)"
+	poetry run pytest -m domain
+
+test-slow: ## Run only slow tests
+	@echo "$(BLUE)Running slow tests...$(NC)"
+	poetry run pytest -m slow
+
+test-coverage: ## Run tests with coverage report
+	@echo "$(BLUE)Running tests with coverage...$(NC)"
+	poetry run pytest --cov=src --cov-report=html:reports/coverage --cov-report=term-missing
+
+
 
 clean: ## Clean up generated files and caches
 	@echo "$(BLUE)Cleaning up...$(NC)"
