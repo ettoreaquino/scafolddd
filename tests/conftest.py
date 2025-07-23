@@ -4,7 +4,7 @@ Pytest configuration and custom fixtures for improved test organization and read
 import pytest
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Add src to path for imports
@@ -353,7 +353,7 @@ def pytest_html_results_table_row(report, cells):
 def test_session_info():
     """Provide session-level test information."""
     return {
-        "start_time": datetime.now(),
+        "start_time": datetime.now(timezone.utc),
         "environment": os.getenv("ENVIRONMENT", "test"),
         "test_type": "unit"
     }
