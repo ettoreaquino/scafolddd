@@ -12,7 +12,6 @@
 - [Infrastructure Layer Implementation](#infrastructure-layer-implementation)
 - [API Adapter Layer Implementation](#api-adapter-layer-implementation)
 - [CDK Infrastructure Implementation](#cdk-infrastructure-implementation)
-
 - [Deployment and Testing](#deployment-and-testing)
 - [Production Readiness](#production-readiness)
 - [API Documentation](#api-documentation)
@@ -554,71 +553,16 @@ __all__ = ['TaskRepository']
 
 **✅ Test Domain Layer (TDD Approach):**
 
-Following TDD principles, you should write comprehensive unit tests for your domain layer. Here's a quick verification script to ensure your domain layer is working correctly before moving forward:
+Following TDD principles, you should write comprehensive unit tests for your domain layer. See [DOMAIN_LAYER.md](../tests/DOMAIN_LAYER.md) for complete testing implementation.
 
-```python
-# test_domain_verification.py (create in project root - temporary file)
-from datetime import datetime, timezone
-from src.domain.entities import Task
-from src.domain.value_objects import TaskId, UserId, TaskStatus
+**Quick verification:** Run the domain tests to ensure everything works:
 
-def test_domain_setup():
-    """Quick verification that domain layer is working"""
-    print("🧪 Testing Domain Layer Setup...")
-    
-    # Test value objects
-    task_id = TaskId.generate()
-    user_id = UserId("user-123")
-    status = TaskStatus.PENDING
-    
-    print(f"✅ TaskId generated: {task_id}")
-    print(f"✅ UserId created: {user_id}")
-    print(f"✅ TaskStatus: {status}")
-    
-    # Test entity
-    task = Task(
-        id=task_id,
-        user_id=user_id,
-        title="Learn Domain Design",
-        description="Understand DDD concepts",
-        status=status,
-        created_at=datetime.now(timezone.utc)
-    )
-    
-    print(f"✅ Created task: {task.title}")
-    
-    # Test events
-    task.update_status(TaskStatus.COMPLETED)
-    events = task.pop_events()
-    print(f"✅ Generated {len(events)} events")
-    
-    print("🎉 Domain layer working correctly!")
-
-if __name__ == "__main__":
-    test_domain_setup()
-```
-
-**Run the verification:**
 ```bash
-# Run from project root
-poetry run python test_domain_verification.py
+# Run domain layer tests
+make test-domain
 
-# Clean up after verification
-rm test_domain_verification.py
+# Expected output: 74 tests passing
 ```
-
-**✅ Expected Output:**
-```
-🧪 Testing Domain Layer Setup...
-✅ TaskId generated: task-123e4567-e89b-12d3-a456-426614174000
-✅ UserId created: user-123
-✅ TaskStatus: pending
-✅ Created task: Learn Domain Design
-✅ Generated 3 events
-🎉 Domain layer working correctly!
-```
-
-> **Note:** This is a **temporary verification script**. For proper TDD approach, see [TESTS.md](TESTS.md) for comprehensive testing strategy.
 
 ---
 
@@ -838,63 +782,15 @@ __all__ = [
 
 **✅ Verify Application Layer Implementation (TDD Approach):**
 
-Following TDD principles, you should write comprehensive unit tests for your application services. Here's a quick verification script to test that your Application Layer is working correctly:
+Following TDD principles, you should write comprehensive unit tests for your application services. See [APPLICATION_LAYER.md](../tests/APPLICATION_LAYER.md) for complete testing implementation.
 
-```python
-# test_application_verification.py (temporary file in project root)
-import asyncio
-from unittest.mock import Mock, AsyncMock
-from src.domain.entities import Task
-from src.domain.value_objects import TaskId, UserId, TaskStatus
-from src.application.services import CreateTaskService
+**Quick verification:** Run the application tests to ensure everything works:
 
-async def test_application_layer():
-    """Quick verification that application layer is working"""
-    print("🧪 Testing Application Layer Setup...")
-    
-    # Create mock dependencies
-    mock_repository = AsyncMock()
-    mock_event_bus = AsyncMock()
-    
-    # Create service
-    service = CreateTaskService(mock_repository, mock_event_bus)
-    
-    # Test execution
-    result = await service.execute("user-123", "Test Task", "Test Description")
-    
-    # Verify response format
-    assert "task_id" in result
-    assert result["title"] == "Test Task"
-    assert result["status"] == "pending"
-    
-    # Verify mocks were called
-    assert mock_repository.save.called
-    assert mock_event_bus.publish.called
-    
-    print("✅ CreateTaskService working correctly")
-    print("✅ Response format correct")
-    print("✅ Dependencies called properly")
-    print("🎉 Application layer working correctly!")
-
-if __name__ == "__main__":
-    asyncio.run(test_application_layer())
-```
-
-**Run the verification:**
 ```bash
-poetry run python test_application_verification.py
+# Run application layer tests
+poetry run pytest tests/unit/application/ -v
 
-# Clean up after verification
-rm test_application_verification.py
-```
-
-**✅ Expected Output:**
-```
-🧪 Testing Application Layer Setup...
-✅ CreateTaskService working correctly
-✅ Response format correct
-✅ Dependencies called properly
-🎉 Application layer working correctly!
+# Expected output: 74 tests passing
 ```
 
 ---
