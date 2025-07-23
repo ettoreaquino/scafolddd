@@ -25,9 +25,3 @@ class TaskRepository(ABC):
   async def delete(self, task_id: TaskId) -> bool:
     """Delete a task by ID. Returns True if deleted, False if not found"""
     pass
-  
-  @abstractmethod
-  async def exists(self, task_id: TaskId) -> bool:
-    """Check if a task exists"""
-    pass
-  
