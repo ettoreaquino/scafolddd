@@ -27,8 +27,6 @@ class Task:
     # Fire creation event for new tasks
     if self.status == TaskStatus.PENDING:
       self._events.append(TaskCreated(
-        event_id="",
-        timestamp=self.created_at,
         aggregate_id=str(self.id),
         task_title=self.title,
         user_id=str(self.user_id)
@@ -49,8 +47,6 @@ class Task:
 
     # Fire status change event
     self._events.append(TaskStatusChanged(
-      event_id="",
-      timestamp=self.updated_at,
       aggregate_id=str(self.id),
       old_status=str(old_status),
       new_status=str(new_status),
@@ -60,8 +56,6 @@ class Task:
     # Fire completion event if task is completed
     if new_status == TaskStatus.COMPLETED:
       self._events.append(TaskCompleted(
-        event_id="",
-        timestamp=self.updated_at,
         aggregate_id=str(self.id),
         task_title=self.title,
         user_id=str(self.user_id)
