@@ -1,7 +1,7 @@
 # Backend Tutorial DDD Makefile
 # Simple utility for running tests and development tasks
 
-.PHONY: help clean test test-html test-parallel test-unit test-domain test-slow test-coverage
+.PHONY: help clean test test-html test-parallel test-unit test-domain test-infrastructure test-application test-slow test-coverage
 .DEFAULT_GOAL := help
 
 # Colors for output
@@ -22,6 +22,8 @@ help: ## Show available commands
 	@echo "$(GREEN)test-parallel$(NC)     Run tests in parallel (faster)"
 	@echo "$(GREEN)test-unit$(NC)         Run only unit tests"
 	@echo "$(GREEN)test-domain$(NC)       Run only domain layer tests"
+	@echo "$(GREEN)test-application$(NC)  Run only application layer tests"
+	@echo "$(GREEN)test-infrastructure$(NC) Run only infrastructure layer tests"
 	@echo "$(GREEN)test-slow$(NC)         Run only slow tests"
 	@echo "$(GREEN)test-coverage$(NC)     Run tests with coverage report"
 	@echo ""
@@ -47,6 +49,14 @@ test-unit: ## Run only unit tests
 test-domain: ## Run only domain layer tests
 	@echo "$(BLUE)Running domain layer tests...$(NC)"
 	poetry run pytest -m domain
+
+test-application: ## Run only application layer tests
+	@echo "$(BLUE)Running application layer tests...$(NC)"
+	poetry run pytest -m application
+
+test-infrastructure: ## Run only infrastructure layer tests
+	@echo "$(BLUE)Running infrastructure layer tests...$(NC)"
+	poetry run pytest -m infrastructure
 
 test-slow: ## Run only slow tests
 	@echo "$(BLUE)Running slow tests...$(NC)"
